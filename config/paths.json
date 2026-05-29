@@ -1,0 +1,44 @@
+{
+    "data": {
+        "data_dir": "data/",
+        "raw_dir": "data/raw/",
+        "processed_dir": "data/processed/",
+        "raw_macro_dir": "data/raw/macro/",
+        "crsp_dir": ""
+    },
+    "raw_files": {
+        "train": "crsp_train_2019.csv",
+        "val": "crsp_val_2021.csv",
+        "test": "crsp_test_2023.csv"
+    },
+    "processed_paths": {
+        "returns_train": "data/processed/ret_train.csv",
+        "returns_val": "data/processed/ret_val.csv",
+        "returns_test": "data/processed/ret_test.csv",
+        "cov_train": "data/processed/cov_train.csv",
+        "corr_train": "data/processed/corr_train.csv",
+        "processed_train": "data/processed/processed_train.csv",
+        "processed_val": "data/processed/processed_val.csv",
+        "processed_test": "data/processed/processed_test.csv",
+        "benchmark_train": "data/processed/benchmark_train.csv",
+        "benchmark_val": "data/processed/benchmark_val.csv",
+        "benchmark_test": "data/processed/benchmark_test.csv",
+        "updated_common_features": "data/processed/updated_common_features.json",
+        "ba_val": "data/processed/ba_val.csv",
+        "ba_test": "data/processed/ba_test.csv"
+    },
+    "artifacts": {
+        "artifacts_dir": "artifacts/",
+        "results_dir": "artifacts/results/",
+        "avg_perf_dir": "artifacts/results/avg_performance/",
+        "hparams_dir": "artifacts/results/optimized_hparams/",
+        "plots_dir": "artifacts/results/plots/",
+        "tuned_plots_dir": "artifacts/results/plots/tuned_plots/",
+        "wfv_plots_dir": "artifacts/results/plots/wfv_plots/",
+        "wfv_rets_dir": "artifacts/results/wfv_returns/",
+        "temp_dir": "artifacts/temp/",
+        "test_plots_dir": "artifacts/results/plots/test_plots/",
+        "test_perf_dir": "artifacts/results/test_performance/"
+    },
+    "models_module": "src.models"
+}

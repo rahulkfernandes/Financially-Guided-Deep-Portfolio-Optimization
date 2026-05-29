@@ -1,0 +1,38 @@
+# OS Files
+.DS_Store
+
+# Cache
+*/.pytest_cache
+*/__pycache__/*
+__pycache__/*
+__pycache__
+*.pyc
+
+# Documentation files
+docs/build/
+docs/source/_autosummary/
+
+# Environment files
+.env
+exploration/.ipynb_checkpoints
+one_model_sbatch.sh
+one_sbatch.sh
+test_all_sbatch.sh
+.vscode/
+check_hpc.py
+test_env.sh
+
+# Dataset directories
+data/raw/2023_sp_500_select_50/
+data/raw/macro/
+data/processed/
+# financial_loss_functions/scripts/generate_synthetic_data.py
+
+# Artifacts & Results
+artifacts/
+docs/docs_out/latex
+cluster_out/
+
+# Local secrets
+data_collectors/fred_config.py
+project_structure.txt
