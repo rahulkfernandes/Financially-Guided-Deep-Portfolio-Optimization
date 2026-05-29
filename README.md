@@ -30,8 +30,8 @@ Since the CRSP dataset cannot be distributed, we provide a synthetic sample data
 
 ### Clone Git Repository
 ```bash
-git clone -b loss-functions https://github.com/travisdesell/exact.git
-cd exact/financial_loss_functions
+git clone https://github.com/rahulkfernandes/Financially-Guided-Deep-Portfolio-Optimization.git
+cd Financially-Guided-Deep-Portfolio-Optimization
 ```
 
 ### Install Dependencies
@@ -96,8 +96,8 @@ pytest tests
 ```
 
 ### For more information
-- [Hyperparameter Optimization Guide](/financial_loss_functions/src/training/README.md)
-- [Evaluation Guide](/financial_loss_functions/src/evaluation/README.md)
+- [Hyperparameter Optimization Guide](src/training/README.md)
+- [Evaluation Guide](src/evaluation/README.md)
 
 
 ## Hardware Recommendations

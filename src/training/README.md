@@ -1,5 +1,5 @@
 # Hyperparameter Optimization and Loss Functions
-[<- Back to Main README](/financial_loss_functions/README.md)
+[<- Back to Main README](../../README.md)
 
 ## Tuning and Evaluation on Validation Data
 The hyperparameter tuning and validation pipeline can be run in two modes. When --grid_mode is `one_model`, the model name provided will be matched with all available custom loss functions. These model-loss combinations can be run in parallel using the `-mpi` flag. The `-t` --tune flag must be present to tune the model hyperparameters on the validation data, and if no --tune flag is present the default hyperparameters will be used for evaluation without tuning. 

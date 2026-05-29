@@ -1,5 +1,5 @@
 # Evaluation on Test Data
-[<- Back to Main README](/financial_loss_functions/README.md)
+[<- Back to Main README](../../README.md)
 
 ## Evaluate Selected Candidates on the Test Data
 
@@ -69,4 +69,4 @@ conda activate <ENV_NAME>
 srun python -m scripts.run_evaluation -pm one_model \
 -m <MODEL_NAME1>-<LOSS_NAME1> <MODEL_NAME2>-<LOSS_NAME2> -mpi
 ```
-All SBATCH examples can be found at `./scripts/sample_batch_scripts/`. The example above can be found at [sample_batch_script](../../scripts/sample_batch_scripts/sample_test_all.sh).
+All SBATCH examples can be found at `scripts/sample_batch_scripts/`. The example above can be found at [sample_batch_script](../../scripts/sample_batch_scripts/sample_test_all.sh).
