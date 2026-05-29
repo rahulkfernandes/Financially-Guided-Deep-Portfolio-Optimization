@@ -1,4 +1,5 @@
 # Financially Guided Deep Portfolio Optimization
+[![arXiv](https://img.shields.io/badge/arXiv-2605.28853-b31b1b.svg)](https://arxiv.org/abs/2605.28853)
 
 ## Overview
 Portfolio optimization in real‑world financial markets is notoriously difficult due to non‑stationarity, noisy data, and high transaction costs. Standard predict‑then‑optimize methods first forecast returns and then solve for weights, compounding prediction errors and often failing under regime shifts. We propose an end‑to‑end framework that directly optimizes differentiable surrogates of key financial metrics – Sharpe ratio, Omega ratio, Conditional Value‑at‑Risk (CVaR), and risk parity – allowing neural networks to learn portfolio weights via backpropagation. The neural network models are trained to directly optimize risk-adjusted metrics while controlling tail-risk and diversification.
@@ -6,7 +7,7 @@ Portfolio optimization in real‑world financial markets is notoriously difficul
 ## Highlights
 - **End‑to‑End Learning**: Neural network outputs portfolio weights for the out-of-sample holding period directly. No intermediate forecasting.
 - **Custom Financially Guided Losses**: Combines differentiable surrogates of risk-adjusted metrics and portfolio construction objectives.
-![Typical Forward Pass](/financial_loss_functions/images/forward_pass.png)
+![Typical Forward Pass](images/forward_pass.png)
 - **Expanding Window Walk-Forward**: The strategy used in the research is: long-only, quarterly rebalancing. Models are retrained from scratch each quarter using all past data to predict portfolio weights for the next quarter, using the past 3 quarters as inference input. 
 - **Hyperparameter Optimization**: Uses Optuna for hyperparameter tuning and maximizes the 95% lower confidence bound of the mean Information Ratio across all walk steps (Maximin Optimization).
 - **Multiple Nueral Architectures**: Compares 7 models: BaseLSTM, AttentionLSTM, InvertedAttentionLSTM, TemporalTransformer, PatchTST, DeformTime, and VSN‑LSTM.
@@ -133,10 +134,10 @@ We evaluated seven neural architectures with two custom loss functions on an out
 - **Statistical robustness**: All improvements are significant across 30 random seeds (Bonferroni‑corrected p < 10^(-8)).
 
 The box plot below shows the distribution of Sharpe ratios (top) and CVaR (bottom) across 30 seeds for candidate models. The AttentionLSTM-CustomLossB has the highest median and narrowest interquartile range and negligible increase in CVaR, confirming consistent outperformance.
-![Boxplot of Sharpe & CVaR](/financial_loss_functions/images/boxplot_sharpe_cvar.png)
+![Boxplot of Sharpe & CVaR](images/boxplot_sharpe_cvar.png)
 
 The Pareto frontier of the 95% lower confidence bound (Sharpe vs. CVaR) places the AttentionLSTM-CustomLossB on the efficient boundary, while all other models are dominated.
-![Pareto Frontier](/financial_loss_functions/images/test_pareto.png)
+![Pareto Frontier](images/test_pareto.png)
 
 ## Using CRSP Equivalent Datasets
 Currently, a sythetic CRSP-like dataset is stored in `data/raw/sample`. If any other CRSP equivalent dataset is being used, place the directory in `data/raw/` and update the CRSP_DIR environment variable in the .env file with the name of the equivalent data directory.
@@ -155,6 +156,19 @@ Since we use pre-split data (train, val, test), the new files must follow the st
             - `<validation_name>.csv`
             - `<test_name>.csv`
 
+## Reference
+If you find this work useful for your research, please cite it as:
+```bibtex
+@misc{fernandes2026financiallyguideddeepportfolio,
+      title={Financially Guided Deep Portfolio Optimization}, 
+      author={Rahul Fernandes and Travis Desell},
+      year={2026},
+      eprint={2605.28853},
+      archivePrefix={arXiv},
+      primaryClass={q-fin.PM},
+      url={https://arxiv.org/abs/2605.28853}, 
+}
+```
 
 ## Acknowledgments
 - We gratefully acknowledge the use of the RIT Research Computing's HPC cluster at Rochester Institute of Technology, which provided essential computational resources for this research.
@@ -169,5 +183,3 @@ Github: [@rahulkfernandes](https://github.com/rahulkfernandes)
 **Travis Desell**  
 Email: tjdvse@rit.edu  
 Github: [@travisdesell](https://github.com/travisdesell)
-
-**Institution:** Rochester Institute of Technology, Rochester, New York 
