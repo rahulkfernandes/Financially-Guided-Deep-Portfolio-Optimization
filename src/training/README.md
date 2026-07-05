@@ -74,6 +74,9 @@ srun python -m scripts.run_training -gm one_model -m <MODEL_NAME> -t -mpi
 ```
 All SBATCH examples can be found at `./scripts/sample_batch_scripts/`. The example above can be found at [sample_batch_script](../../scripts/sample_batch_scripts/sample_one_model_tune.sh).
 
+## Model Selection After Hyperparameter Optimization
+After tuning the hyperparameters of the models, the performance analysis and model selection is done in the [model_selection.ipynb](../../exploration/model_selection.ipynb) notebook. The selected models are then used for evaluation on the test data.
+
 ## Available Models and Loss Functions
 ### Neural Network Models
 - **LSTM**

@@ -70,3 +70,6 @@ srun python -m scripts.run_evaluation -pm one_model \
 -m <MODEL_NAME1>-<LOSS_NAME1> <MODEL_NAME2>-<LOSS_NAME2> -mpi
 ```
 All SBATCH examples can be found at `scripts/sample_batch_scripts/`. The example above can be found at [sample_batch_script](../../scripts/sample_batch_scripts/sample_test_all.sh).
+
+## Final Performance Analysis
+The final performance analysis of the evaluation of models on the test data can be found at [test_analysis.ipynb](../../exploration/test_analysis.ipynb).
