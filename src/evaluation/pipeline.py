@@ -340,7 +340,18 @@ def run_evaluation_pipeline(
         serialize_np_dict(bench_daily_returns),
         out_win_date_cols
     )
-    
+    # -------------------- Combining and Savining All Allocation Weights -------------------- # 
+    all_pf_weights = {
+        'nn_models': serialize_np_dict(nn_alloc_weights),
+        'benchmarks': serialize_np_dict(trad_alloc_weights)
+    }
+
+    all_weight_file_name = artifacts_paths['test_perf_dir'] \
+        / f'test_weights_{results_suffix}.json'
+    save_to_json(
+        all_pf_weights,
+        all_weight_file_name
+    )
     # -------------------- Combining and Savining All Returns -------------------- # 
     all_daily_rets_w_dates = {
         'nn_models': nn_daily_rets_w_dates,

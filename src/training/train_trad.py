@@ -8,6 +8,10 @@ from src.data_processing.preprocess_crsp import preprocessor2
 
 class TradModelsTrainer:
     models_hparams = 'trad_models'
+    cov_arg = 'cov'
+    corr_arg = 'corr'
+    returns_arg = 'returns' # These must match the arguments in cov_models.py
+    prev_weights_arg = 'prev_weights'
     
     def __init__(
             self,
@@ -35,6 +39,15 @@ class TradModelsTrainer:
         alloc_weights = model_obj.calculate_weights(**filtered_kwargs)
         return alloc_weights
     
+    def _get_prev_weights(self, model_name: str) -> np.ndarray | None:
+        """
+        Get the previous portfolio allocation weights, i.e., from the previous step.
+        """
+        if model_name in self.all_alloc_weights:
+            return self.all_alloc_weights[model_name][-1]
+        else:
+            return None
+
     def _process_train_1_ds(
             self, returns_is: pd.DataFrame
         ) -> dict[str, np.ndarray]:
@@ -43,9 +56,9 @@ class TradModelsTrainer:
         """
         returns_is_cov, returns_is_corr = preprocessor2(returns_is)
         payload = {
-            'cov': returns_is_cov,
-            'corr': returns_is_corr,
-            'returns': returns_is
+            self.cov_arg: returns_is_cov,
+            self.corr_arg: returns_is_corr,
+            self.returns_arg: returns_is
         }
 
         # Loop over every model
@@ -56,6 +69,9 @@ class TradModelsTrainer:
 
             # To inspect args of the calculate_weights method and provide it with the relevant args
             sig = inspect.signature(model_class.calculate_weights)
+
+            if self.prev_weights_arg in sig.parameters:
+                payload[self.prev_weights_arg] = self._get_prev_weights(model_name)
 
             filtered_kwargs = {
                 k: v for k, v in payload.items() 

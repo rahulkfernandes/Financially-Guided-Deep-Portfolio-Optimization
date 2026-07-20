@@ -500,10 +500,14 @@
         "MeanVariancePortfolio": {
             "expected_returns_method": "arithmetic",
             "risk_aversion": 1.0,
-            "allow_short": false
+            "allow_short": false,
+            "ledoit_wolf_shrink": true
         },
         "NestedClusteredOptimization": {
             "de_noise": true
+        },
+        "EqualRiskContribution": {
+            "turnover_limit": 0.2
         }
     }
 }

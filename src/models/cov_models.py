@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from scipy.optimize import minimize
+from sklearn.covariance import LedoitWolf
 from scipy.cluster.hierarchy import linkage
 from sklearn.neighbors import KernelDensity
 from scipy.spatial.distance import squareform
@@ -381,6 +382,7 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
             risk_aversion: float = 1.0,
             allow_short: bool = False,
             solver: str = 'auto',
+            ledoit_wolf_shrink: bool = False
         ):
         """
         Args:
@@ -395,6 +397,7 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
             allow_short (bool): Allow short strategy allocation weights. (-1 to 1)
             solver (str): 'auto', 'cvxopt' or 'scipy'. Python module to be used for optimization.
                 Default = 'auto', auto detects is cvxopt is avaiable or uses SciPy as a fallback.
+            ledoit_wolf_shrink (bool): Toggle to apply Ledoit Wolf shrinkage. Default = False
         
         Raises:
             ValueError: expected_returns_method must be None, 'arithmetic' or 'geometric'
@@ -410,6 +413,13 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
 
         self.risk_aversion = risk_aversion
         self.allow_short = allow_short
+        self.ledoit_wolf_shrink = ledoit_wolf_shrink
+        
+        # Use Ledoit-Wolf Shrinkage if required
+        if self.ledoit_wolf_shrink:
+            self.lw_shrink = LedoitWolf()
+        else:
+            self.lw_shrink = None
 
         # fitted attributes
         self.cov = None
@@ -478,10 +488,16 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         Returns:
             weights (np.ndarray): Allocation weights of the portfolio, which sum to 1.
         """
+
+        if self.ledoit_wolf_shrink:
+            if returns is None:
+                raise ValueError('Ledoit-Wolf shrinkage requires returns data.')
+            cov = self.lw_shrink.fit(returns).covariance_
+
         cov_mat = self._to_numpy(cov)
         self.cov = cov_mat
         
-        n = cov_mat.shape[0]
+        n = self.cov.shape[0]
         ones = np.ones(n)
 
         # Determine expected returns vector mu
@@ -973,3 +989,103 @@ class NestedClusteredOptimization():
         )
 
         return self.weights
+    
+@TradModelLibrary.register()
+class EqualRiskContribution:
+    """
+    Equal Risk Contribution (ERC) portfolio with optional turnover control.
+    """
+    
+    def __init__(
+            self,
+            bounds: tuple[float, float] = (0.0, 1.0),
+            turnover_limit: float | None = None,
+            objective_scale: float = 100000.0,
+            eps: float = 1e-8
+        ):
+        """
+        Args:
+            bounds (tuple): (min, max) bounds for each weight.
+            turnover_limit (float | None): Maximum allowed turnover (e.g., 0.2 for 20%).
+                If None, no turnover constraint is applied.
+            objective_scale (float): Scaling factor for objective function to improve
+                numerical stability for SLSQP. Default = 100000.0.
+            eps (float): Smoothing parameter for the absolute value approximation.
+                Default = 1e-8.
+        """
+        self.bounds = bounds
+        self.turnover_limit = turnover_limit
+        self.objective_scale = objective_scale
+        self.eps = eps
+
+    def calculate_weights(
+        self,
+        cov: np.ndarray,
+        prev_weights: np.ndarray | None = None
+    ) -> np.ndarray:
+        """
+        Compute ERC portfolio weights.
+
+        Args:
+            cov (np.ndarray): (N, N) covariance matrix.
+            prev_weights (np.ndarray | None): (N,) weights from previous period.
+                If provided, turnover constraint is enforced using `turnover_limit`.
+                If None, turnover is ignored.
+
+        Returns:
+            np.ndarray: (N,) optimal weights.
+        """
+        cov = np.asarray(cov)
+        n = cov.shape[0]
+
+        if prev_weights is not None:
+            prev_weights = np.asarray(prev_weights)
+            if prev_weights.shape[0] != n:
+                raise ValueError('prev_weights must have the same length as number of assets.')
+
+        # Objective: minimize variance of risk contributions, scaled for numerical stability
+        def objective(w):
+            variance = w @ cov @ w
+            if variance < 1e-12:
+                return 0.0
+            sigma = np.sqrt(variance)
+            rc = w * (cov @ w) / sigma
+            return np.var(rc) * self.objective_scale
+
+        constraints = [{'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0}]
+
+        if prev_weights is not None and self.turnover_limit is not None:
+            # Smooth approximation of absolute value for SLSQP gradient stability
+            eps = self.eps
+            constraints.append({
+                'type': 'ineq',
+                'fun': lambda w: self.turnover_limit - np.sum(np.sqrt((w - prev_weights)**2 + eps))
+            })
+
+        bounds = [self.bounds for _ in range(n)]
+
+        # Start at previous weights to ensure initial guess satisfies turnover constraint
+        if prev_weights is not None:
+            w0 = np.clip(prev_weights, self.bounds[0], self.bounds[1])
+            w0 = w0 / np.sum(w0)  # ensure it sums to 1
+        else:
+            w0 = np.ones(n) / n
+
+        result = minimize(
+            objective,
+            w0,
+            method='SLSQP',
+            bounds=bounds,
+            constraints=constraints,
+            options={'ftol': 1e-9, 'maxiter': 500, 'disp': False}
+        )
+
+        if not result.success:
+            print(f"Warning: ERC optimization failed ({result.message}). Returning fallback.")
+            return prev_weights if prev_weights is not None else w0
+
+        # Normalize and clip
+        w = result.x
+        w = np.clip(w, self.bounds[0], self.bounds[1])
+        w = w / np.sum(w)
+        return w
