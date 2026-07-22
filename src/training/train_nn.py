@@ -43,7 +43,8 @@ class Trainer:
         max_seq_len: int,
         device: torch.device | str,
         scheduler_hparams: dict[str, Any] | None = None,
-        loss_hparams: dict[str, Any] | None = None
+        loss_hparams: dict[str, Any] | None = None,
+        seed: int | None = None
     ):
         """
         Initialize Trainer instance to any given PyTorch model.
@@ -98,6 +99,11 @@ class Trainer:
         self.train_hparams = train_hparams
         self.loss_hparams = loss_hparams or {}
         self.scheduler_hparams = scheduler_hparams
+        self.seed = seed
+
+        self.generator = None
+        if self.seed is not None:
+            self.generator = torch.Generator().manual_seed(self.seed)
         
         self.train_losses = [] # Stores average losses, for plotting
         self.val_losses = [] # Stores average losses, for plotting
@@ -202,6 +208,7 @@ class Trainer:
         train_loader = DataLoader(
             train_ds,
             batch_size=self.train_hparams['train_batch_size'],
+            generator=self.generator,
             shuffle=True
         )
 
@@ -574,7 +581,8 @@ class Walker:
             max_seq_len=X_train_shape[1],
             # scheduler_hparams=self.hparams['scheduler'],
             loss_hparams=self.hparams['loss'],
-            device=self.torch_device
+            device=self.torch_device,
+            seed=self.seed
         )
         
         trainer.train(train_ds)
@@ -614,7 +622,7 @@ class Walker:
         """
 
 
-        if self.seed: # set a fixed seed if provided
+        if self.seed is not None: # set a fixed seed if provided
             set_seed(self.seed)
         
         walk_train = train.copy()

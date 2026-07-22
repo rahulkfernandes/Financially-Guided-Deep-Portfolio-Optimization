@@ -37,7 +37,7 @@ def set_seed(seed=50) -> None:
     # Basic Python and Numpy seeds
     random.seed(seed)
     np.random.seed(seed)
-    # os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
     
     # Basic PyTorch seed (covers CPU)
     torch.manual_seed(seed)
