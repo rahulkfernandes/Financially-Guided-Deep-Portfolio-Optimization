@@ -65,6 +65,8 @@ class Trainer:
                 Default = None.
             loss_hparams (dict[str, Any] | None): Hyperparameters for the loss function (i.e., lambdas).
                 Default = None
+            seed (int | None): Random seed for reproducibility used only furing training for the DataLoader. 
+                Defaults to None.
         
         Raises:
             ValueError: Incorrect torch device provided.
@@ -490,7 +492,7 @@ class Walker:
             hparams (dict): Hyperparameters for model, optimizer, training, loss.
             torch_device (torch.device or str): Device to run on.
             reshaper (Reshaper): Helper for creating rolling windows.
-            seed (int, optional): Random seed for reproducibility. Defaults to None.
+            seed (int | None): Random seed for reproducibility. Defaults to None.
         """
         self.num_steps = num_steps
         self.model_name = model_name
