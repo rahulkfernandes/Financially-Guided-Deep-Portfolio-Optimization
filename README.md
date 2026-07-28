@@ -2,7 +2,8 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2605.28853-b31b1b.svg)](https://arxiv.org/abs/2605.28853)
 
 ## Overview
-Portfolio optimization in real‑world financial markets is notoriously difficult due to non‑stationarity, noisy data, and high transaction costs. Standard predict‑then‑optimize methods first forecast returns and then solve for weights, compounding prediction errors and often failing under regime shifts. We propose an end‑to‑end framework that directly optimizes differentiable surrogates of key financial metrics – Sharpe ratio, Omega ratio, Conditional Value‑at‑Risk (CVaR), and risk parity – allowing neural networks to learn portfolio weights via backpropagation. The neural network models are trained to directly optimize risk-adjusted metrics while controlling tail-risk and diversification.
+Portfolio optimization in real-world financial markets is notoriously difficult due to non-stationarity, noisy data, and high transaction costs. Standard predict-then-optimize methods first forecast returns and then solve for weights, compounding prediction errors and often failing under regime shifts. We propose an end-to-end framework that directly optimizes differentiable surrogates of key financial metrics (Sharpe ratio, Omega ratio, Conditional Value-at-Risk, and risk parity), allowing neural networks to learn portfolio weights via backpropagation. Rather than following a predict-then-optimize pipeline (forecast returns, then solve for portfolio allocation), our models output normalized portfolio allocation weights.
+
    
 ## Highlights
 - **End‑to‑End Learning**: Neural network outputs portfolio weights for the out-of-sample holding period directly. No intermediate forecasting.
@@ -15,7 +16,7 @@ Portfolio optimization in real‑world financial markets is notoriously difficul
 - **Expanding Window Walk-Forward**: The strategy used in the research is: long-only, quarterly rebalancing. Models are retrained from scratch each quarter using all past data to predict portfolio weights for the next quarter, using the past 3 quarters as inference input. 
 - **Hyperparameter Optimization**: Uses Optuna for hyperparameter tuning and maximizes the 95% lower confidence bound of the mean Information Ratio across all walk steps (Maximin Optimization).
 - **Multiple Nueral Architectures**: Compares 7 models: BaseLSTM, AttentionLSTM, InvertedAttentionLSTM, TemporalTransformer, PatchTST, DeformTime, and VSN‑LSTM.
-- **Benchmark Comparisons**: Includes tradional benchmarks like Nested Clustered Optimization, Hierarchial Risk Parity, Mean Variance Portfolio Optimization and Minimum Variance Portfolio Optimization, along with the S&P 500 and Equal Weight Portfolio.
+- **Benchmark Comparisons**: Includes tradional benchmarks such as Nested Clustered Optimization, Hierarchial Risk Parity, Mean Variance Portfolio Optimization with shrinkage, Minimum Variance Portfolio Optimization, and Equal Risk Contribution with turnover control, along with the S&P 500 and Equal Weight Portfolio.
 
 
 ## Data
@@ -135,7 +136,7 @@ We evaluated seven neural architectures with two custom loss functions on an out
 - **Annualised Sharpe ratio**: +0.29 vs. S&P500 –0.02.
 - **Total compounded return**: +7.86% vs. S&P500 –4.52% (a relative improvement of >270%).
 - **Tail risk**: CVaR increased by less than 0.5 percentage points, showing higher return without additional downside exposure.
-- **Statistical robustness**: All improvements are significant across 30 random seeds (Bonferroni‑corrected p < 10^(-8)).
+- **Statistical robustness**: All Sharpe improvements are significant across 30 random seeds (Bonferroni‑corrected p < 10^(-8)).
 
 The box plot below shows the distribution of Sharpe ratios (top) and CVaR (bottom) across 30 seeds for candidate models. The AttentionLSTM-CustomLossB has the highest median and narrowest interquartile range and negligible increase in CVaR, confirming consistent outperformance.
 ![Boxplot of Sharpe & CVaR](images/boxplot_sharpe_cvar.png)
