@@ -7,7 +7,11 @@ Portfolio optimization in real‑world financial markets is notoriously difficul
 ## Highlights
 - **End‑to‑End Learning**: Neural network outputs portfolio weights for the out-of-sample holding period directly. No intermediate forecasting.
 - **Custom Financially Guided Losses**: Combines differentiable surrogates of risk-adjusted metrics and portfolio construction objectives.
-![Typical Forward Pass](images/forward_pass.png)
+<!-- ![Typical Forward Pass](images/forward_pass.png) -->
+<p align="center">
+  <img src="images/forward_pass.svg" width="600" alt="Typical Forward Pass">
+</p>
+
 - **Expanding Window Walk-Forward**: The strategy used in the research is: long-only, quarterly rebalancing. Models are retrained from scratch each quarter using all past data to predict portfolio weights for the next quarter, using the past 3 quarters as inference input. 
 - **Hyperparameter Optimization**: Uses Optuna for hyperparameter tuning and maximizes the 95% lower confidence bound of the mean Information Ratio across all walk steps (Maximin Optimization).
 - **Multiple Nueral Architectures**: Compares 7 models: BaseLSTM, AttentionLSTM, InvertedAttentionLSTM, TemporalTransformer, PatchTST, DeformTime, and VSN‑LSTM.
