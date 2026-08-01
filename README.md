@@ -1,5 +1,6 @@
 # Financially Guided Deep Portfolio Optimization
 [![arXiv](https://img.shields.io/badge/arXiv-2605.28853-b31b1b.svg)](https://arxiv.org/abs/2605.28853)
+[![GitHub Release](https://img.shields.io/github/v/release/rahulkfernandes/Financially-Guided-Deep-Portfolio-Optimization?label=Paper%20Release)](https://github.com/rahulkfernandes/Financially-Guided-Deep-Portfolio-Optimization/releases/tag/v1.0-paper)
 
 ## Overview
 Portfolio optimization in real-world financial markets is notoriously difficult due to non-stationarity, noisy data, and high transaction costs. Standard predict-then-optimize methods first forecast returns and then solve for weights, compounding prediction errors and often failing under regime shifts. We propose an end-to-end framework that directly optimizes differentiable surrogates of key financial metrics (Sharpe ratio, Omega ratio, Conditional Value-at-Risk, and risk parity), allowing neural networks to learn portfolio weights via backpropagation. Rather than following a predict-then-optimize pipeline (forecast returns, then solve for portfolio allocation), our models output normalized portfolio allocation weights.
