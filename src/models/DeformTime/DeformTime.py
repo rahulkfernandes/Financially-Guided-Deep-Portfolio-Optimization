@@ -1,14 +1,23 @@
+from math import ceil
+
 import torch
 from torch import nn
+
+from src.models.DeformTime.layers.Embed import (
+    Deform_Temporal_Embedding,
+    Local_Temporal_Embedding,
+)
+from src.models.DeformTime.layers.TemporalDeformAttention import (
+    CrossDeformAttn,
+    Encoder,
+)
+from src.models.layers.final_layer import FinalStrategyLayer
 from src.models.registry import NNModelLibrary
 
-from src.models.DeformTime.layers.TemporalDeformAttention import Encoder, CrossDeformAttn
-from src.models.DeformTime.layers.Embed import Deform_Temporal_Embedding, Local_Temporal_Embedding
-from math import ceil
 
 class Layernorm(nn.Module):
     def __init__(self, dim):
-        super(Layernorm, self).__init__()
+        super().__init__()
         self.layernorm = nn.LayerNorm(dim)
 
     def forward(self, x):
@@ -32,13 +41,14 @@ class DeformTime(nn.Module):
             dropout: float,
             n_reshape: int,
             patch_len: int,
-            stride: int
+            stride: int,
+            allow_short: bool = False
     ) -> None:
         super().__init__()
 
         self.input_size = input_size
         self.num_stocks = num_stocks
-        
+
         self.d_layers = d_layers
         self.d_model = d_model
 
@@ -60,14 +70,14 @@ class DeformTime(nn.Module):
         dpr = [x.item() for x in torch.linspace(drop_path_rate, drop_path_rate, e_layers)]
         self.encoder = Encoder(
             [
-                CrossDeformAttn(seq_len=max_seq_len, 
-                                d_model=self.d_model, 
-                                n_heads=nheads, 
-                                dropout=dropout, 
-                                droprate=dpr[l], 
-                                n_days=n_days[l], 
-                                window_size=kernel_size, 
-                                patch_len=patch_len, 
+                CrossDeformAttn(seq_len=max_seq_len,
+                                d_model=self.d_model,
+                                n_heads=nheads,
+                                dropout=dropout,
+                                droprate=dpr[l],
+                                n_days=n_days[l],
+                                window_size=kernel_size,
+                                patch_len=patch_len,
                                 stride=stride) for l in range(e_layers)
             ],
             norm_layer=Layernorm(self.d_model)
@@ -85,6 +95,8 @@ class DeformTime(nn.Module):
             nn.Linear(self.d_model, self.num_stocks)
         )
 
+        self.final_layer = FinalStrategyLayer(allow_short)
+
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
         assert x_enc.shape[-1] == self.input_size
 
@@ -98,7 +110,7 @@ class DeformTime(nn.Module):
         x_enc = self.pre_norm(x_enc)
 
         # Deformed attention
-        enc_out, _ = self.encoder(x_enc) 
+        enc_out, _ = self.encoder(x_enc)
 
         # Decoder
         h0 = torch.zeros(self.d_layers, x_enc.size(0), self.d_model).requires_grad_().to(x_enc.device)
@@ -107,9 +119,9 @@ class DeformTime(nn.Module):
         context = out[:, -1, :]
         # Apply the portfolio head to convert the context vector into allocation logits.
         return self.fc(context)
-    
+
     def forward(self, x_enc, x_mark_enc=None, x_dec=None, x_mark_dec=None, mask=None):
         logits = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
         # Normalize the logits so the downstream losses receive portfolio weights.
-        return torch.softmax(logits, dim=-1)
-
+        pf_weights = self.final_layer(logits)
+        return pf_weights

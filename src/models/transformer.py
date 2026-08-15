@@ -1,12 +1,11 @@
 import torch
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
+
+from src.models.layers.encoders import GlobalAttentionProcessor, LSTMEncoder
+from src.models.layers.final_layer import FinalStrategyLayer
+from src.models.layers.TFT_vsn import GatedResidualNetwork, VariableSelectionNetwork
 from src.models.registry import NNModelLibrary
-from src.models.layers.encoders import LSTMEncoder, GlobalAttentionProcessor
-from src.models.layers.TFT_vsn import (
-    VariableSelectionNetwork,
-    GatedResidualNetwork
-)
+
 
 class LearnableTemporalWeight(nn.Module):
     """
@@ -15,7 +14,7 @@ class LearnableTemporalWeight(nn.Module):
     def __init__(self, max_seq_len: int):
         """
         Initialize object to learn temporal weights for pooling.
-        
+
         Args:
             max_seq_len (int): Maximum sequence length. Here, we use length of input window.
         """
@@ -46,6 +45,7 @@ class TemporalTransformer(nn.Module):
         expansion_factor: int,
         max_seq_len: int,
         equal_prior: bool = False,
+        allow_short: bool = False,
         **kwargs
     ):
         """
@@ -63,18 +63,18 @@ class TemporalTransformer(nn.Module):
             expansion_factor (int): Expansion factor to calculate feedforward dimension of each
                 transformer layer.
             max_seq_len (int): Maximum sequence length. Here, we use length of input window.
-            equal_prior (bool): Initialize logits to 0 to start model with equal 
+            equal_prior (bool): Initialize logits to 0 to start model with equal
                 portfolio allocation weights. This does not initialize internal
                 models weights other than the final fully connected layer weights.
                 Default = False.
         """
         super().__init__()
-        
+
         # 1. Feature Projection (Initial step to clean up features), kind of denoising
         self.feature_proj = nn.Linear(input_size, hidden_size)
-        
+
         self.lstm_encoder = LSTMEncoder(hidden_size, lstm_layers, dropout)
-        
+
         self.glob_attn = GlobalAttentionProcessor(
             hidden_size, trans_layers, nheads, expansion_factor, max_seq_len, dropout
         )
@@ -90,14 +90,16 @@ class TemporalTransformer(nn.Module):
         self.fc = nn.Linear(hidden_size, num_stocks)
 
         if equal_prior:
-            # 1. Initialize weights to near-zero 
+            # 1. Initialize weights to near-zero
             # This makes the output independent of the hidden state at start
             # nn.init.constant_(self.fc.weight, 0.0)
-            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
-            
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
+
             # 2. Initialize bias to zero
             # Softmax(0) = 1/N
             nn.init.constant_(self.fc.bias, 0.0)
+
+        self.final_layer = FinalStrategyLayer(allow_short)
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -110,18 +112,18 @@ class TemporalTransformer(nn.Module):
             pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
         """
         # x: (B, T, 251)
-        
+
         # Initial Projection
         x = self.feature_proj(x)
-        
+
         # Step 1: LSTM local processing
         # This helps the Transformer 'see' the sequence as a flow
         x = self.lstm_encoder(x)
-        
+
         # Step 2: Transformer Global Attention
         # Every day now looks at every other day through the lens of the LSTM output
         x = self.glob_attn(x)
-        
+
         # x = lstm_x + trans_x
         # Step 3: Pooling
         # Mean pooling the context of the whole 120-day window
@@ -132,10 +134,12 @@ class TemporalTransformer(nn.Module):
         # STep 4: Scaling
         # context = context * self.alpha # Scale it without centering or standardizing
         context = self.dropout(context)
-        
+
         # Step 5: Portfolio Allocation
         logits = self.fc(context)  # (B, N)
-        return torch.softmax(logits, dim=-1)
+        pf_weights = self.final_layer(logits)
+
+        return pf_weights
 
     def _recency_pooling(self, x: Tensor) -> Tensor:
         """
@@ -146,7 +150,7 @@ class TemporalTransformer(nn.Module):
         # Create weights that increase linearly: [1, 2, 3, ... 120]
         weights = torch.linspace(0.5, 1.0, steps=T).to(x.device)
         weights = weights.view(1, T, 1) # Match dimensions
-        
+
         # Weighted average
         return (x * weights).mean(dim=1)
 
@@ -182,15 +186,15 @@ class TFT(nn.Module):
             expansion_factor (int): Expansion factor to calculate feedforward dimension of each
                 transformer layer.
             max_seq_len (int): Maximum sequence length. Here, we use length of input window.
-            equal_prior (bool): Initialize logits to 0 to start model with equal 
+            equal_prior (bool): Initialize logits to 0 to start model with equal
                 portfolio allocation weights. This does not initialize internal
                 models weights other than the final fully connected layer weights.
                 Default = False.
         """
-        
+
         # 1. Feature Selection Layer (VSN)
         self.vsn = VariableSelectionNetwork(input_size, hidden_size, dropout)
-        
+
         # 2. Position Encoding
         self.pos_embedding = nn.Parameter(torch.zeros(1, max_seq_len, hidden_size))
         nn.init.trunc_normal_(self.pos_embedding, std=0.02)
@@ -205,16 +209,16 @@ class TFT(nn.Module):
             activation='gelu'
         )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        
+
         # 4. Final Gating & Output
         self.post_attention_grn = GatedResidualNetwork(hidden_size, hidden_size, hidden_size, dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
 
         if equal_prior:
-            # 1. Initialize weights to near-zero 
+            # 1. Initialize weights to near-zero
             # This makes the output independent of the hidden state at start
-            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
-            
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
+
             # 2. Initialize bias to zero
             # Softmax(0) = 1/N
             nn.init.constant_(self.fc.bias, 0.0)
@@ -230,22 +234,22 @@ class TFT(nn.Module):
             pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
         """
         # x: (B, T, 251)
-        
+
         # Filter 251 features down to hidden_size
-        x = self.vsn(x) 
-        
+        x = self.vsn(x)
+
         # Add position context
         x = x + self.pos_embedding[:, :x.size(1), :]
-        
+
         # Temporal context (Attention)
         x = self.transformer(x)
-        
+
         # Regulate attention output with gating
         x = self.post_attention_grn(x)
-        
+
         # Mean Pooling for stability
         context = x.mean(dim=1)
-        
+
         logits = self.fc(context)
         return torch.softmax(logits, dim=-1)
 
@@ -253,7 +257,7 @@ class TFT(nn.Module):
 @NNModelLibrary.register(category='transformer')
 class PatchTST(nn.Module):
     def __init__(
-        self, 
+        self,
         input_size: int,          # 251 features
         hidden_size: int,         # d_model
         num_layers: int,
@@ -265,6 +269,7 @@ class PatchTST(nn.Module):
         expansion_factor: int,
         max_seq_len: int,
         equal_prior: bool = False,
+        allow_short: bool = False,
         **kwargs
     ):
         """
@@ -277,14 +282,14 @@ class PatchTST(nn.Module):
             num_stocks (int): Number of stocks in dataset.
                 It is the number of output nodes.
             patch_size (int): Patch size to break up the input window into patches.
-            stride (int): Stride to slide the patching window to create overlapping or 
+            stride (int): Stride to slide the patching window to create overlapping or
                 non-overlapping patch windows.
             nheads (int): Number of attention heads.
             dropout (float): Dropout rate.
             expansion_factor (int): Expansion factor to calculate feedforward dimension of each
                 transformer layer.
             max_seq_len (int): Maximum sequence length. Here, we use length of input window.
-            equal_prior (bool): Initialize logits to 0 to start model with equal 
+            equal_prior (bool): Initialize logits to 0 to start model with equal
                 portfolio allocation weights. This does not initialize internal
                 models weights other than the final fully connected layer weights.
                 Default = False.
@@ -316,14 +321,16 @@ class PatchTST(nn.Module):
         self.fc = nn.Linear(hidden_size, num_stocks)
 
         if equal_prior:
-            # 1. Initialize weights to near-zero 
+            # 1. Initialize weights to near-zero
             # This makes the output independent of the hidden state at start
             # nn.init.constant_(self.fc.weight, 0.0)
-            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
-            
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
+
             # 2. Initialize bias to zero
             # Softmax(0) = 1/N
             nn.init.constant_(self.fc.bias, 0.0)
+
+        self.final_layer = FinalStrategyLayer(allow_short)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -335,7 +342,7 @@ class PatchTST(nn.Module):
         Returns:
             pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
         """
-        B, T, C = x.shape
+        B, _, _ = x.shape
 
         # Extract patches: (B, num_patches, patch_size, C)
         patches = x.unfold(1, self.patch_size, self.stride)  # (B, num_patches, C, patch_size)
@@ -355,4 +362,6 @@ class PatchTST(nn.Module):
         # Pool (mean over patches) and output
         context = x.mean(dim=1)                              # (B, hidden_size)
         logits = self.fc(context)                            # (B, num_stocks)
-        return torch.softmax(logits, dim=-1)
+        pf_weights = self.final_layer(logits)
+
+        return pf_weights
