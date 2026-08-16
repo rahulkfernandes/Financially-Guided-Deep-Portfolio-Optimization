@@ -9,7 +9,7 @@ class FinalStrategyLayer(nn.Module):
     sums to 1. Long-Short uses a tanh function followed by normalization using absolute
     sum of the vector such that the vector sums to 1.
     """
-    def __init__(self, allow_short: bool = False) -> None:
+    def __init__(self, allow_short: bool = False, eps: float = 1e-8) -> None:
         """
         Initialize the constructor for the final strategy layer.
 
@@ -18,7 +18,9 @@ class FinalStrategyLayer(nn.Module):
                 If True, weights can be negative.
                 If False, weights can only be positive.
         """
-        self.allow_short = allow_short
+        super().__init__()
+        self.allow_short: bool = allow_short
+        self.eps: float = eps
 
     def forward(self, logits: Tensor) -> Tensor:
         """
@@ -33,7 +35,9 @@ class FinalStrategyLayer(nn.Module):
         if self.allow_short:
             raw_weights = torch.tanh(logits)
             # Normalize by sum of absolutes
-            pf_weights = raw_weights / torch.sum(torch.abs(raw_weights), dim=-1, keepdim=True)
+            pf_weights = raw_weights / (
+                torch.sum(torch.abs(raw_weights), dim=-1, keepdim=True) + self.eps
+            )
         else:
             pf_weights = torch.softmax(logits, dim=-1)
 
