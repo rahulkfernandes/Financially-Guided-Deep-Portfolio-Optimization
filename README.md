@@ -166,15 +166,12 @@ Since we use pre-split data (train, val, test), the new files must follow the st
 ## Reference
 If you find this work useful for your research, please cite it as:
 ```bibtex
-@INPROCEEDINGS{11692398,
+@INPROCEEDINGS{fernandes2026desell,
   author={Fernandes, Rahul and Desell, Travis},
   booktitle={2026 IEEE Symposium on Computational Intelligence for Financial Engineering and Economics (CIFEr)}, 
   title={Financially Guided Deep Portfolio Optimization}, 
-  year={2026},
-  volume={},
-  number={},
+  year={2026},˝
   pages={114-121},
-  keywords={Modeling;Portfolios;Optimization;Equations;Training;Measurement;Testing;Windows;Tagging;Tail;Portfolio optimization;deep learning;differentiable loss functions;walk-forward validation;Omega ratio;CVaR;risk parity},
   doi={10.1109/CIFEr67845.2026.11692398}}
 ```
 
