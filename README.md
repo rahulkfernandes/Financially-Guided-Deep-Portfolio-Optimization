@@ -170,7 +170,7 @@ If you find this work useful for your research, please cite it as:
   author={Fernandes, Rahul and Desell, Travis},
   booktitle={2026 IEEE Symposium on Computational Intelligence for Financial Engineering and Economics (CIFEr)}, 
   title={Financially Guided Deep Portfolio Optimization}, 
-  year={2026},˝
+  year={2026},
   pages={114-121},
   doi={10.1109/CIFEr67845.2026.11692398}}
 ```
