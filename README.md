@@ -1,5 +1,6 @@
 # Financially Guided Deep Portfolio Optimization
-[![arXiv](https://img.shields.io/badge/arXiv-2605.28853-b31b1b.svg)](https://arxiv.org/abs/2605.28853)
+[![IEEE CIFEr 2026](https://img.shields.io/badge/IEEE-CIFEr%202026-00629B?logo=ieee&logoColor=white)](https://doi.org/10.1109/CIFEr67845.2026.11692398)
+[![arXiv](https://img.shields.io/badge/arXiv-Preprint-b31b1b.svg)](https://doi.org/10.48550/arXiv.2605.28853)
 [![Appendix](https://img.shields.io/badge/Zenodo-Appendix-024282?logo=zenodo&logoColor=white)](https://doi.org/10.5281/zenodo.21925252)
 [![GitHub Release](https://img.shields.io/github/v/release/rahulkfernandes/Financially-Guided-Deep-Portfolio-Optimization?label=Paper%20Release)](https://github.com/rahulkfernandes/Financially-Guided-Deep-Portfolio-Optimization/releases/tag/v1.0-paper)
 
